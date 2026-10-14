@@ -1,0 +1,294 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Simulador IRS Renda Acessível</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Source+Sans+3:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: formulário à esquerda, resultado à direita (fica fixo ao rolar no desktop); empilha no telemóvel */
+:root{
+  --bg:#f3f5f6; --surface:#ffffff; --fg:#14232e; --muted:#5b6b76; --line:#d5dde2;
+  --accent:#c9861a; --ink:#0f3a5f; --soft:#e3ecf1;
+  --ok:#1f7a4d; --ok-bg:#e2f2e9; --warn:#9a5b00; --warn-bg:#fbefd9; --bad:#a3322a; --bad-bg:#f8e3e0;
+  --f-display:"Archivo","Arial Narrow",system-ui,sans-serif;
+  --f-body:"Source Sans 3","Segoe UI",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0d1419; --surface:#141e25; --fg:#e4ecf0; --muted:#93a4ae; --line:#26343e;
+  --accent:#f0b24a; --ink:#9fc7e8; --soft:#1a2832;
+  --ok:#6fd3a0; --ok-bg:#12291f; --warn:#f0b24a; --warn-bg:#2b2213; --bad:#f08c82; --bad-bg:#2e1714; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0d1419; --surface:#141e25; --fg:#e4ecf0; --muted:#93a4ae; --line:#26343e;
+  --accent:#f0b24a; --ink:#9fc7e8; --soft:#1a2832;
+  --ok:#6fd3a0; --ok-bg:#12291f; --warn:#f0b24a; --warn-bg:#2b2213; --bad:#f08c82; --bad-bg:#2e1714; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:16px/1.5 var(--f-body);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 32px}
+.wrap{max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+h1{font:800 clamp(1.7rem,3.4vw,2.5rem)/1.02 var(--f-display);font-stretch:78%;letter-spacing:-.01em;margin:0;text-wrap:balance}
+.sub{margin:.4rem 0 0;color:var(--muted);max-width:66ch;font-size:.95rem}
+.label{font:500 .68rem/1 var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,420px);gap:20px;align-items:start}
+@media (max-width:860px){.grid{grid-template-columns:minmax(0,1fr)}}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px;min-width:0}
+form{display:flex;flex-direction:column;gap:18px}
+.f{display:flex;flex-direction:column;gap:7px}
+.f > label,.f > .lab{font-weight:600;font-size:.95rem}
+.f .help{font-size:.84rem;color:var(--muted);margin:0}
+input[type=text],input[type=number],select{font:inherit;width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg)}
+input:focus-visible,select:focus-visible,.seg button:focus-visible,.chk input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.money{position:relative}
+.money input{padding-right:2.4rem;font:600 1.25rem var(--f-mono);font-variant-numeric:tabular-nums}
+.money span{position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-family:var(--f-mono)}
+.seg{display:flex;flex-wrap:wrap;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--bg)}
+.seg button{flex:1 1 auto;font:600 .92rem/1 var(--f-mono);border:0;background:none;color:var(--fg);padding:11px 10px;cursor:pointer;min-width:52px}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--surface)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:520px){.row2{grid-template-columns:1fr}}
+.chk{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid var(--line);border-radius:8px;cursor:pointer;background:var(--bg)}
+.chk input{margin-top:4px;width:17px;height:17px;flex:none}
+.chk b{display:block;font-weight:600}
+.chk small{color:var(--muted);font-size:.84rem}
+.limit{display:flex;justify-content:space-between;align-items:baseline;gap:10px;background:var(--soft);border-radius:8px;padding:10px 12px;font-size:.92rem}
+.limit b{font:700 1.15rem var(--f-mono);font-variant-numeric:tabular-nums}
+
+.res{position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px);display:flex;flex-direction:column;gap:16px}
+.pill{display:inline-flex;align-items:center;gap:6px;font:600 .8rem/1 var(--f-mono);letter-spacing:.03em;padding:6px 10px;border-radius:99px}
+.pill.ok{background:var(--ok-bg);color:var(--ok)}
+.pill.warn{background:var(--warn-bg);color:var(--warn)}
+.pill.bad{background:var(--bad-bg);color:var(--bad)}
+.big{font:800 3.2rem/1 var(--f-display);font-stretch:85%;font-variant-numeric:tabular-nums;color:var(--ink);margin:.2rem 0 0}
+.big small{font:500 1rem var(--f-body);color:var(--muted);margin-left:6px}
+.why{margin:0;font-size:.95rem}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+td{padding:7px 0;border-bottom:1px solid var(--line);font-size:.93rem}
+td:last-child{text-align:right;font-family:var(--f-mono)}
+tr.tot td{font-weight:700;border-bottom:0}
+tr.tot td:last-child{color:var(--ink)}
+.cmp{border-top:1px solid var(--line);padding-top:14px;display:flex;flex-direction:column;gap:10px}
+.cmp h3{margin:0;font:700 1.05rem var(--f-display);font-stretch:90%}
+.bars{display:flex;flex-direction:column;gap:8px}
+.bar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;font-size:.88rem}
+.bar .t{height:10px;border-radius:5px;background:var(--soft);grid-column:1/-1;position:relative;overflow:hidden}
+.bar .t i{position:absolute;inset:0 auto 0 0;border-radius:5px;background:var(--ink)}
+.bar.best .t i{background:var(--ok)}
+.bar span:nth-child(2){font-family:var(--f-mono)}
+.verdict{margin:0;font-size:.93rem}
+.verdict b{color:var(--fg)}
+footer{font-size:.82rem;color:var(--muted);max-width:90ch;display:flex;flex-direction:column;gap:6px}
+footer p{margin:0}
+footer a{color:var(--ink)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+
+/* tipologia em grelha: 8 colunas no desktop, 4 no telemóvel */
+.seg{display:grid;grid-template-columns:repeat(8,1fr);gap:1px;background:var(--line)}
+.seg button{background:var(--bg);min-width:0}
+.seg button+button{border-left:0}
+
+/* barra de resultado fixa no telemóvel */
+.dock{display:none}
+@media (max-width:860px){
+  .res{position:static}
+  .dock{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:5;align-items:center;gap:12px;
+    background:var(--surface);border-top:1px solid var(--line);box-shadow:0 -6px 20px rgba(0,0,0,.08);
+    padding-top:10px;padding-bottom:calc(10px + env(safe-area-inset-bottom,0px));
+    padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+    transition:transform .2s}
+  .dock.off{transform:translateY(110%)}
+  .dock .dl{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+  .dock .dl span{font:500 .72rem/1.2 var(--f-mono);color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .dock .dl b{font:800 1.5rem/1 var(--f-display);font-variant-numeric:tabular-nums;color:var(--ink)}
+  .dock button{font:600 .9rem var(--f-body);border:0;border-radius:8px;padding:11px 14px;background:var(--ink);color:var(--surface);cursor:pointer;flex:none}
+  .dock button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  body{padding-bottom:calc(96px + env(safe-area-inset-bottom,0px))}
+}
+@media (max-width:560px){
+  body{padding-top:14px}
+  .wrap{gap:14px}
+  h1{font-size:1.65rem}
+  .sub{font-size:.9rem}
+  .grid{gap:14px}
+  .card{padding:16px;border-radius:10px}
+  form{gap:16px}
+  .seg{grid-template-columns:repeat(4,1fr)}
+  .seg button{padding:12px 4px}
+  .chk{padding:10px}
+  .big{font-size:2.5rem}
+  .big small{display:block;margin:.35rem 0 0}
+  .why,td{font-size:.9rem}
+  .limit{flex-wrap:wrap}
+}
+@media (prefers-reduced-motion:reduce){.dock{transition:none}}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Quanto IRS paga esta renda?</h1>
+    <p class="sub">Indique a casa e a renda que cobra. O simulador verifica se cabe no limite do arrendamento acessível do concelho (isenção de IRS) e, se não couber, calcula o imposto à taxa especial aplicável em 2026.</p>
+  </header>
+
+  <div class="grid">
+    <div class="card">
+      <form id="form" novalidate>
+        <div class="f">
+          <label for="conc">Concelho</label>
+          <input type="text" id="conc" list="names" autocomplete="off" value="Lisboa">
+          <datalist id="names"></datalist>
+          <p class="help" id="conc-help"></p>
+        </div>
+
+        <div class="f">
+          <span class="lab" id="tip-l">Tipologia</span>
+          <div class="seg" role="group" aria-labelledby="tip-l" id="tip"></div>
+        </div>
+
+        <div class="f">
+          <span class="lab">Majorações do limite</span>
+          <label class="chk"><input type="checkbox" id="park"><span><b>Estacionamento privativo incluído</b><small>+10% no limite máximo</small></span></label>
+          <label class="chk"><input type="checkbox" id="cert"><span><b>Certificado energético A ou A+</b><small>+10% no limite, com certificado válido à data do contrato</small></span></label>
+          <div class="limit"><span>Limite de renda acessível</span><b id="lim"></b></div>
+        </div>
+
+        <div class="row2">
+          <div class="f">
+            <label for="renda">Renda mensal que cobra</label>
+            <div class="money"><input type="number" id="renda" min="0" step="1" inputmode="decimal" value="1500"><span>€</span></div>
+          </div>
+          <div class="f">
+            <label for="meses">Meses de renda no ano</label>
+            <input type="number" id="meses" min="1" max="12" step="1" value="12">
+          </div>
+        </div>
+
+        <div class="row2">
+          <div class="f">
+            <label for="dur">Duração do contrato</label>
+            <select id="dur">
+              <option value="0">Menos de 3 anos</option>
+              <option value="3" selected>3 a menos de 5 anos</option>
+              <option value="5">5 a menos de 10 anos</option>
+              <option value="10">10 a menos de 20 anos</option>
+              <option value="20">20 anos ou mais</option>
+            </select>
+          </div>
+          <div class="f">
+            <label for="desp">Despesas dedutíveis no ano</label>
+            <div class="money"><input type="number" id="desp" min="0" step="1" inputmode="decimal" value="0"><span>€</span></div>
+          </div>
+        </div>
+        <p class="help" style="margin-top:-8px">Despesas dedutíveis: IMI, condomínio, obras de conservação e manutenção, seguros obrigatórios. A duração conta para a isenção (mínimo de 3 anos em habitação permanente) e para as reduções de taxa.</p>
+      </form>
+    </div>
+
+    <aside class="card res" id="res" aria-live="polite">
+      <div>
+        <span class="pill" id="pill"></span>
+        <p class="big" id="irs"></p>
+        <p class="why" id="why"></p>
+      </div>
+      <table><tbody id="calc"></tbody></table>
+      <div class="cmp">
+        <h3>E se baixasse a renda para o limite?</h3>
+        <div class="bars" id="bars"></div>
+        <p class="verdict" id="verdict"></p>
+      </div>
+    </aside>
+  </div>
+
+  <div class="dock" id="dock" aria-hidden="true">
+    <div class="dl"><span id="dock-l"></span><b id="dock-v"></b></div>
+    <button type="button" id="dock-b" tabindex="-1">Ver detalhe</button>
+  </div>
+
+  <footer>
+    <p>Regras usadas: isenção de IRS do Regime Simplificado de Arrendamento Acessível (DL n.º 97/2026) com os limites da <a href="https://diariodarepublica.pt/dr/detalhe/portaria/454-2026-1179722108" target="_blank" rel="noopener">Portaria n.º 454/2026/1</a>; taxa de 10% para rendas moderadas até 2.300 €/mês (art. 45.º-C do EBF, 2026–2029); taxa autónoma de 25% para arrendamento habitacional, reduzida para 15%, 10% ou 5% em contratos de 5, 10 ou 20 anos (art. 72.º do CIRS). Quando duas taxas se aplicam, o simulador usa a mais baixa.</p>
+    <p>A isenção também exige comunicar o contrato às Finanças e submetê-lo ao IHRU até 15 de janeiro do ano seguinte. O simulador não considera o englobamento, contratos com rendas mais de 50% acima dos limites gerais nem situações de contabilidade organizada. É uma estimativa; confirme com o seu contabilista.</p>
+  </footer>
+</div>
+
+<script>
+const D=[{"n":"Abrantes","d":"Distrito de Santarém","v":[265,340,442,545,596,698,50]},{"n":"Águeda","d":"Distrito de Aveiro","v":[283,362,471,580,635,744,50]},{"n":"Aguiar da Beira","d":"Distrito de Guarda","v":[224,308,392,475,531,587,50]},{"n":"Alandroal","d":"Distrito de Évora","v":[280,392,504,587,671,755,50]},{"n":"Albergaria-a-Velha","d":"Distrito de Aveiro","v":[296,379,493,607,665,779,50]},{"n":"Albufeira","d":"Distrito de Faro","v":[554,709,923,1136,1243,1457,100]},{"n":"Alcácer do Sal","d":"Distrito de Setúbal","v":[357,457,595,733,802,940,50]},{"n":"Alcanena","d":"Distrito de Santarém","v":[224,308,392,475,531,587,50]},{"n":"Alcobaça","d":"Distrito de Leiria","v":[318,408,530,653,715,838,50]},{"n":"Alcochete","d":"Distrito de Setúbal","v":[460,589,766,943,1032,1210,75]},{"n":"Alcoutim","d":"Distrito de Faro","v":[488,625,814,1002,1097,1285,75]},{"n":"Alenquer","d":"Distrito de Lisboa","v":[394,505,657,810,886,1038,50]},{"n":"Alfândega da Fé","d":"Distrito de Bragança","v":[224,308,392,475,531,587,50]},{"n":"Alijó","d":"Distrito de Vila Real","v":[224,308,392,475,531,587,50]},{"n":"Aljezur","d":"Distrito de Faro","v":[384,531,671,788,895,1010,75]},{"n":"Aljustrel","d":"Distrito de Beja","v":[339,434,565,695,761,892,50]},{"n":"Almada","d":"Distrito de Setúbal","v":[612,784,1021,1257,1375,1612,100]},{"n":"Almeida","d":"Distrito de Guarda","v":[224,308,392,475,531,587,50]},{"n":"Almeirim","d":"Distrito de Santarém","v":[306,391,509,627,686,804,50]},{"n":"Almodôvar","d":"Distrito de Beja","v":[234,308,392,481,531,617,50]},{"n":"Alpiarça","d":"Distrito de Santarém","v":[280,392,504,587,671,755,50]},{"n":"Alter do Chão","d":"Distrito de Portalegre","v":[224,308,392,475,531,587,50]},{"n":"Alvaiázere","d":"Distrito de Leiria","v":[280,392,504,587,671,755,50]},{"n":"Alvito","d":"Distrito de Beja","v":[280,392,504,587,671,755,50]},{"n":"Amadora","d":"Distrito de Lisboa","v":[593,759,988,1217,1331,1560,100]},{"n":"Amarante","d":"Distrito de Porto","v":[224,308,392,475,531,587,50]},{"n":"Amares","d":"Distrito de Braga","v":[282,361,470,578,633,742,50]},{"n":"Anadia","d":"Distrito de Aveiro","v":[283,362,471,580,635,744,50]},{"n":"Angra do Heroísmo","d":"Região Autónoma dos Açores","v":[264,339,441,543,594,696,50]},{"n":"Ansião","d":"Distrito de Leiria","v":[224,308,392,475,531,589,50]},{"n":"Arcos de Valdevez","d":"Distrito de Viana do Castelo","v":[230,308,392,475,531,606,50]},{"n":"Arganil","d":"Distrito de Coimbra","v":[224,308,392,475,531,587,50]},{"n":"Armamar","d":"Distrito de Viseu","v":[224,308,392,475,531,587,50]},{"n":"Arouca","d":"Distrito de Aveiro","v":[280,392,504,587,671,755,50]},{"n":"Arraiolos","d":"Distrito de Évora","v":[228,308,392,475,531,600,50]},{"n":"Arronches","d":"Distrito de Portalegre","v":[224,308,392,475,531,587,50]},{"n":"Arruda dos Vinhos","d":"Distrito de Lisboa","v":[364,531,671,784,895,979,75]},{"n":"Aveiro","d":"Distrito de Aveiro","v":[429,549,714,880,963,1128,75]},{"n":"Avis","d":"Distrito de Portalegre","v":[224,308,392,475,531,587,50]},{"n":"Azambuja","d":"Distrito de Lisboa","v":[353,453,589,725,794,930,50]},{"n":"Baião","d":"Distrito de Porto","v":[224,308,392,475,531,587,50]},{"n":"Barcelos","d":"Distrito de Braga","v":[298,392,504,612,671,785,50]},{"n":"Barrancos","d":"Distrito de Beja","v":[280,392,504,587,671,755,50]},{"n":"Barreiro","d":"Distrito de Setúbal","v":[525,673,876,1078,1180,1382,100]},{"n":"Batalha","d":"Distrito de Leiria","v":[290,371,483,595,651,763,50]},{"n":"Beja","d":"Distrito de Beja","v":[306,392,511,629,688,806,50]},{"n":"Belmonte","d":"Distrito de Castelo Branco","v":[224,308,392,475,531,587,50]},{"n":"Benavente","d":"Distrito de Santarém","v":[354,454,591,727,796,932,50]},{"n":"Bombarral","d":"Distrito de Leiria","v":[304,390,507,624,683,800,50]},{"n":"Borba","d":"Distrito de Évora","v":[224,308,392,475,531,587,50]},{"n":"Boticas","d":"Distrito de Vila Real","v":[224,308,392,475,531,589,50]},{"n":"Braga","d":"Distrito de Braga","v":[391,531,671,802,895,1028,75]},{"n":"Bragança","d":"Distrito de Bragança","v":[224,308,392,475,531,587,50]},{"n":"Cabeceiras de Basto","d":"Distrito de Braga","v":[224,308,392,475,531,587,50]},{"n":"Cadaval","d":"Distrito de Lisboa","v":[274,350,456,562,614,720,50]},{"n":"Caldas da Rainha","d":"Distrito de Leiria","v":[378,485,631,777,850,996,50]},{"n":"Calheta (R.A.A.)","d":"Região Autónoma dos Açores","v":[280,392,504,587,671,755,50]},{"n":"Calheta (R.A.M.)","d":"Região Autónoma da Madeira","v":[280,392,504,587,671,755,50]},{"n":"Câmara de Lobos","d":"Região Autónoma da Madeira","v":[365,467,608,749,819,960,50]},{"n":"Caminha","d":"Distrito de Viana do Castelo","v":[301,392,504,619,677,793,50]},{"n":"Campo Maior","d":"Distrito de Portalegre","v":[224,308,392,475,531,587,50]},{"n":"Cantanhede","d":"Distrito de Coimbra","v":[268,343,447,550,602,706,50]},{"n":"Carrazeda de Ansiães","d":"Distrito de Bragança","v":[224,308,392,475,531,587,50]},{"n":"Carregal do Sal","d":"Distrito de Viseu","v":[224,308,392,475,531,587,50]},{"n":"Cartaxo","d":"Distrito de Santarém","v":[273,349,454,560,612,718,50]},{"n":"Cascais","d":"Distrito de Lisboa","v":[752,964,1254,1544,1690,1980,100]},{"n":"Castanheira de Pera","d":"Distrito de Leiria","v":[280,392,504,587,671,755,50]},{"n":"Castelo Branco","d":"Distrito de Castelo Branco","v":[244,312,406,500,547,641,50]},{"n":"Castelo de Paiva","d":"Distrito de Aveiro","v":[224,308,392,475,531,587,50]},{"n":"Castelo de Vide","d":"Distrito de Portalegre","v":[224,308,392,475,531,587,50]},{"n":"Castro Daire","d":"Distrito de Viseu","v":[224,308,392,475,531,587,50]},{"n":"Castro Marim","d":"Distrito de Faro","v":[378,531,671,784,895,996,75]},{"n":"Castro Verde","d":"Distrito de Beja","v":[280,392,504,587,671,755,50]},{"n":"Celorico da Beira","d":"Distrito de Guarda","v":[224,308,392,475,531,587,50]},{"n":"Celorico de Basto","d":"Distrito de Braga","v":[224,308,392,475,531,587,50]},{"n":"Chamusca","d":"Distrito de Santarém","v":[280,392,504,587,671,755,50]},{"n":"Chaves","d":"Distrito de Vila Real","v":[242,310,403,496,543,636,50]},{"n":"Cinfães","d":"Distrito de Viseu","v":[224,308,392,475,531,587,50]},{"n":"Coimbra","d":"Distrito de Coimbra","v":[426,546,711,875,957,1122,75]},{"n":"Condeixa-a-Nova","d":"Distrito de Coimbra","v":[287,367,478,589,644,755,50]},{"n":"Constância","d":"Distrito de Santarém","v":[255,327,426,524,573,672,50]},{"n":"Coruche","d":"Distrito de Santarém","v":[280,392,504,587,671,755,50]},{"n":"Corvo","d":"Região Autónoma dos Açores","v":[280,392,504,587,671,755,50]},{"n":"Covilhã","d":"Distrito de Castelo Branco","v":[278,356,463,570,624,731,50]},{"n":"Crato","d":"Distrito de Portalegre","v":[224,308,392,475,531,587,50]},{"n":"Cuba","d":"Distrito de Beja","v":[280,392,504,587,671,755,50]},{"n":"Elvas","d":"Distrito de Portalegre","v":[224,308,392,475,531,587,50]},{"n":"Entroncamento","d":"Distrito de Santarém","v":[324,415,540,665,727,852,50]},{"n":"Espinho","d":"Distrito de Aveiro","v":[458,586,763,940,1028,1205,75]},{"n":"Esposende","d":"Distrito de Braga","v":[348,446,581,715,782,917,50]},{"n":"Estarreja","d":"Distrito de Aveiro","v":[280,392,504,587,671,755,50]},{"n":"Estremoz","d":"Distrito de Évora","v":[226,308,392,475,531,595,50]},{"n":"Évora","d":"Distrito de Évora","v":[390,531,671,800,895,1026,75]},{"n":"Fafe","d":"Distrito de Braga","v":[224,308,392,475,531,587,50]},{"n":"Faro","d":"Distrito de Faro","v":[447,572,745,917,1004,1176,75]},{"n":"Felgueiras","d":"Distrito de Porto","v":[224,308,392,475,531,587,50]},{"n":"Ferreira do Alentejo","d":"Distrito de Beja","v":[280,392,504,587,671,755,50]},{"n":"Ferreira do Zêzere","d":"Distrito de Santarém","v":[250,320,416,513,561,658,50]},{"n":"Figueira da Foz","d":"Distrito de Coimbra","v":[365,467,608,749,819,960,50]},{"n":"Figueira de Castelo Rodrigo","d":"Distrito de Guarda","v":[224,308,392,475,531,587,50]},{"n":"Figueiró dos Vinhos","d":"Distrito de Leiria","v":[280,392,504,587,671,755,50]},{"n":"Fornos de Algodres","d":"Distrito de Guarda","v":[224,308,392,475,531,587,50]},{"n":"Freixo de Espada à Cinta","d":"Distrito de Bragança","v":[224,308,392,475,531,587,50]},{"n":"Fronteira","d":"Distrito de Portalegre","v":[224,308,392,475,531,587,50]},{"n":"Funchal","d":"Região Autónoma da Madeira","v":[620,794,1034,1273,1393,1632,100]},{"n":"Fundão","d":"Distrito de Castelo Branco","v":[224,308,392,475,531,587,50]},{"n":"Gavião","d":"Distrito de Portalegre","v":[224,308,392,475,531,587,50]},{"n":"Góis","d":"Distrito de Coimbra","v":[342,438,570,702,768,900,50]},{"n":"Golegã","d":"Distrito de Santarém","v":[224,308,392,475,531,587,50]},{"n":"Gondomar","d":"Distrito de Porto","v":[402,531,671,826,903,1058,75]},{"n":"Gouveia","d":"Distrito de Guarda","v":[224,308,392,475,531,587,50]},{"n":"Grândola","d":"Distrito de Setúbal","v":[478,612,796,981,1073,1258,50]},{"n":"Guarda","d":"Distrito de Guarda","v":[232,308,392,476,531,611,50]},{"n":"Guimarães","d":"Distrito de Braga","v":[303,392,505,622,681,798,50]},{"n":"Horta","d":"Região Autónoma dos Açores","v":[224,308,392,475,531,587,50]},{"n":"Idanha-a-Nova","d":"Distrito de Castelo Branco","v":[224,308,392,475,531,587,50]},{"n":"Ílhavo","d":"Distrito de Aveiro","v":[375,531,671,784,895,986,75]},{"n":"Lagoa","d":"Distrito de Faro","v":[456,584,760,936,1024,1200,75]},{"n":"Lagoa (R.A.A.)","d":"Região Autónoma dos Açores","v":[331,424,552,680,743,871,50]},{"n":"Lagos","d":"Distrito de Faro","v":[547,701,912,1123,1229,1440,100]},{"n":"Lajes das Flores","d":"Região Autónoma dos Açores","v":[280,392,504,587,671,755,50]},{"n":"Lajes do Pico","d":"Região Autónoma dos Açores","v":[280,392,504,587,671,755,50]},{"n":"Lamego","d":"Distrito de Viseu","v":[224,308,392,475,531,587,50]},{"n":"Leiria","d":"Distrito de Leiria","v":[358,458,596,734,803,941,50]},{"n":"Lisboa","d":"Distrito de Lisboa","v":[785,1006,1309,1612,1763,2066,150]},{"n":"Loulé","d":"Distrito de Faro","v":[550,704,917,1129,1235,1447,100]},{"n":"Loures","d":"Distrito de Lisboa","v":[538,689,896,1104,1207,1415,100]},{"n":"Lourinhã","d":"Distrito de Lisboa","v":[328,420,546,673,736,863,50]},{"n":"Lousã","d":"Distrito de Coimbra","v":[245,314,408,503,550,644,50]},{"n":"Lousada","d":"Distrito de Porto","v":[224,308,392,475,531,587,50]},{"n":"Mação","d":"Distrito de Santarém","v":[296,380,494,608,666,780,50]},{"n":"Macedo de Cavaleiros","d":"Distrito de Bragança","v":[224,308,392,475,531,587,50]},{"n":"Machico","d":"Região Autónoma da Madeira","v":[364,531,671,784,895,979,75]},{"n":"Madalena","d":"Região Autónoma dos Açores","v":[364,531,671,784,895,979,75]},{"n":"Mafra","d":"Distrito de Lisboa","v":[490,627,816,1005,1100,1289,75]},{"n":"Maia","d":"Distrito de Porto","v":[443,567,738,909,994,1165,75]},{"n":"Mangualde","d":"Distrito de Viseu","v":[224,308,392,475,531,587,50]},{"n":"Manteigas","d":"Distrito de Guarda","v":[224,308,392,475,531,587,50]},{"n":"Marco de Canaveses","d":"Distrito de Porto","v":[224,308,392,475,531,588,50]},{"n":"Marinha Grande","d":"Distrito de Leiria","v":[292,392,504,600,671,769,50]},{"n":"Marvão","d":"Distrito de Portalegre","v":[224,308,392,475,531,587,50]},{"n":"Matosinhos","d":"Distrito de Porto","v":[556,712,927,1142,1249,1464,100]},{"n":"Mealhada","d":"Distrito de Aveiro","v":[236,308,393,484,531,620,50]},{"n":"Mêda","d":"Distrito de Guarda","v":[224,308,392,475,531,587,50]},{"n":"Melgaço","d":"Distrito de Viana do Castelo","v":[224,308,392,475,531,587,50]},{"n":"Mértola","d":"Distrito de Beja","v":[280,392,504,587,671,755,50]},{"n":"Mesão Frio","d":"Distrito de Vila Real","v":[224,308,392,475,531,587,50]},{"n":"Mira","d":"Distrito de Coimbra","v":[285,365,475,585,640,750,50]},{"n":"Miranda do Corvo","d":"Distrito de Coimbra","v":[285,365,475,585,640,750,50]},{"n":"Miranda do Douro","d":"Distrito de Bragança","v":[224,308,392,475,531,587,50]},{"n":"Mirandela","d":"Distrito de Bragança","v":[224,308,392,475,531,587,50]},{"n":"Mogadouro","d":"Distrito de Bragança","v":[224,308,392,475,531,587,50]},{"n":"Moimenta da Beira","d":"Distrito de Viseu","v":[224,308,392,475,531,587,50]},{"n":"Moita","d":"Distrito de Setúbal","v":[458,586,763,940,1028,1205,75]},{"n":"Monção","d":"Distrito de Viana do Castelo","v":[295,378,492,606,663,776,50]},{"n":"Monchique","d":"Distrito de Faro","v":[364,531,671,784,895,979,75]},{"n":"Mondim de Basto","d":"Distrito de Vila Real","v":[280,359,467,575,629,737,50]},{"n":"Monforte","d":"Distrito de Portalegre","v":[224,308,392,475,531,587,50]},{"n":"Montalegre","d":"Distrito de Vila Real","v":[224,308,392,475,531,589,50]},{"n":"Montemor-o-Novo","d":"Distrito de Évora","v":[280,392,504,587,671,755,50]},{"n":"Montemor-o-Velho","d":"Distrito de Coimbra","v":[289,370,481,592,648,760,50]},{"n":"Montijo","d":"Distrito de Setúbal","v":[457,585,762,938,1026,1202,75]},{"n":"Mora","d":"Distrito de Évora","v":[280,392,504,587,671,755,50]},{"n":"Mortágua","d":"Distrito de Viseu","v":[224,308,392,475,531,587,50]},{"n":"Moura","d":"Distrito de Beja","v":[224,308,392,475,531,587,50]},{"n":"Mourão","d":"Distrito de Évora","v":[280,392,504,587,671,755,50]},{"n":"Murça","d":"Distrito de Vila Real","v":[224,308,392,475,531,587,50]},{"n":"Murtosa","d":"Distrito de Aveiro","v":[280,392,504,587,671,755,50]},{"n":"Nazaré","d":"Distrito de Leiria","v":[407,531,678,835,913,1070,75]},{"n":"Nelas","d":"Distrito de Viseu","v":[224,308,392,475,531,587,50]},{"n":"Nisa","d":"Distrito de Portalegre","v":[224,308,392,475,531,587,50]},{"n":"Nordeste","d":"Região Autónoma dos Açores","v":[280,392,504,587,671,755,50]},{"n":"Óbidos","d":"Distrito de Leiria","v":[372,477,620,764,836,979,50]},{"n":"Odemira","d":"Distrito de Beja","v":[285,392,504,587,671,755,50]},{"n":"Odivelas","d":"Distrito de Lisboa","v":[581,745,969,1193,1306,1530,100]},{"n":"Oeiras","d":"Distrito de Lisboa","v":[703,901,1172,1443,1579,1850,100]},{"n":"Oleiros","d":"Distrito de Castelo Branco","v":[224,308,392,475,531,587,50]},{"n":"Olhão","d":"Distrito de Faro","v":[394,531,671,810,895,1038,75]},{"n":"Oliveira de Azeméis","d":"Distrito de Aveiro","v":[259,332,432,533,583,683,50]},{"n":"Oliveira de Frades","d":"Distrito de Viseu","v":[230,308,392,475,531,605,50]},{"n":"Oliveira do Bairro","d":"Distrito de Aveiro","v":[277,354,461,568,622,728,50]},{"n":"Oliveira do Hospital","d":"Distrito de Coimbra","v":[224,308,392,475,531,587,50]},{"n":"Ourém","d":"Distrito de Santarém","v":[312,400,521,641,701,822,50]},{"n":"Ourique","d":"Distrito de Beja","v":[280,392,504,587,671,755,50]},{"n":"Ovar","d":"Distrito de Aveiro","v":[336,430,560,690,755,884,50]},{"n":"Paços de Ferreira","d":"Distrito de Porto","v":[256,328,426,525,574,673,50]},{"n":"Palmela","d":"Distrito de Setúbal","v":[443,568,739,910,995,1166,75]},{"n":"Pampilhosa da Serra","d":"Distrito de Coimbra","v":[342,438,570,702,768,900,50]},{"n":"Paredes","d":"Distrito de Porto","v":[265,339,442,544,595,697,50]},{"n":"Paredes de Coura","d":"Distrito de Viana do Castelo","v":[224,308,392,475,531,587,50]},{"n":"Pedrógão Grande","d":"Distrito de Leiria","v":[280,392,504,587,671,755,50]},{"n":"Penacova","d":"Distrito de Coimbra","v":[280,392,504,587,671,755,50]},{"n":"Penafiel","d":"Distrito de Porto","v":[256,328,427,526,575,674,50]},{"n":"Penalva do Castelo","d":"Distrito de Viseu","v":[224,308,392,475,531,587,50]},{"n":"Penamacor","d":"Distrito de Castelo Branco","v":[224,308,392,475,531,587,50]},{"n":"Penedono","d":"Distrito de Viseu","v":[224,308,392,475,531,587,50]},{"n":"Penela","d":"Distrito de Coimbra","v":[280,392,504,587,671,755,50]},{"n":"Peniche","d":"Distrito de Leiria","v":[355,454,591,728,797,934,50]},{"n":"Peso da Régua","d":"Distrito de Vila Real","v":[224,308,392,475,531,587,50]},{"n":"Pinhel","d":"Distrito de Guarda","v":[224,308,392,475,531,587,50]},{"n":"Pombal","d":"Distrito de Leiria","v":[254,325,423,520,569,667,50]},{"n":"Ponta Delgada","d":"Região Autónoma dos Açores","v":[362,463,603,742,812,952,50]},{"n":"Ponta do Sol","d":"Região Autónoma da Madeira","v":[539,690,898,1106,1210,1418,75]},{"n":"Ponte da Barca","d":"Distrito de Viana do Castelo","v":[224,308,392,475,531,587,50]},{"n":"Ponte de Lima","d":"Distrito de Viana do Castelo","v":[274,350,456,562,614,720,50]},{"n":"Ponte de Sor","d":"Distrito de Portalegre","v":[239,308,398,490,537,629,50]},{"n":"Portalegre","d":"Distrito de Portalegre","v":[224,308,392,475,531,587,50]},{"n":"Portel","d":"Distrito de Évora","v":[280,392,504,587,671,755,50]},{"n":"Portimão","d":"Distrito de Faro","v":[530,679,883,1088,1190,1394,100]},{"n":"Porto","d":"Distrito de Porto","v":[652,866,1118,1341,1510,1715,100]},{"n":"Porto de Mós","d":"Distrito de Leiria","v":[254,325,423,521,570,668,50]},{"n":"Porto Moniz","d":"Região Autónoma da Madeira","v":[539,690,898,1106,1210,1418,75]},{"n":"Porto Santo","d":"Região Autónoma da Madeira","v":[539,690,898,1106,1210,1418,75]},{"n":"Póvoa de Lanhoso","d":"Distrito de Braga","v":[228,308,392,475,531,600,50]},{"n":"Póvoa de Varzim","d":"Distrito de Porto","v":[400,531,671,822,899,1054,75]},{"n":"Povoação","d":"Região Autónoma dos Açores","v":[280,392,504,587,671,755,50]},{"n":"Proença-a-Nova","d":"Distrito de Castelo Branco","v":[224,308,392,475,531,587,50]},{"n":"Redondo","d":"Distrito de Évora","v":[280,392,504,587,671,755,50]},{"n":"Reguengos de Monsaraz","d":"Distrito de Évora","v":[254,325,423,521,570,668,50]},{"n":"Resende","d":"Distrito de Viseu","v":[224,308,392,475,531,587,50]},{"n":"Ribeira Brava","d":"Região Autónoma da Madeira","v":[539,690,898,1106,1210,1418,75]},{"n":"Ribeira de Pena","d":"Distrito de Vila Real","v":[224,308,392,475,531,589,50]},{"n":"Ribeira Grande","d":"Região Autónoma dos Açores","v":[259,332,432,533,583,683,50]},{"n":"Rio Maior","d":"Distrito de Santarém","v":[265,340,442,545,596,698,50]},{"n":"Sabrosa","d":"Distrito de Vila Real","v":[224,308,392,475,531,587,50]},{"n":"Sabugal","d":"Distrito de Guarda","v":[224,308,392,475,531,587,50]},{"n":"Salvaterra de Magos","d":"Distrito de Santarém","v":[280,392,504,587,671,755,50]},{"n":"Santa Comba Dão","d":"Distrito de Viseu","v":[224,308,392,475,531,587,50]},{"n":"Santa Cruz","d":"Região Autónoma da Madeira","v":[486,623,810,998,1092,1279,75]},{"n":"Santa Cruz da Graciosa","d":"Região Autónoma dos Açores","v":[280,392,504,587,671,755,50]},{"n":"Santa Cruz das Flores","d":"Região Autónoma dos Açores","v":[280,392,504,587,671,755,50]},{"n":"Santa Maria da Feira","d":"Distrito de Aveiro","v":[302,392,504,621,679,796,50]},{"n":"Santa Marta de Penaguião","d":"Distrito de Vila Real","v":[224,308,392,475,531,587,50]},{"n":"Santana","d":"Região Autónoma da Madeira","v":[539,690,898,1106,1210,1418,75]},{"n":"Santarém","d":"Distrito de Santarém","v":[332,425,553,680,744,872,50]},{"n":"Santiago do Cacém","d":"Distrito de Setúbal","v":[423,542,705,869,950,1114,75]},{"n":"Santo Tirso","d":"Distrito de Porto","v":[278,356,463,570,624,731,50]},{"n":"São Brás de Alportel","d":"Distrito de Faro","v":[316,404,526,648,709,830,50]},{"n":"São João da Madeira","d":"Distrito de Aveiro","v":[325,416,542,667,730,856,50]},{"n":"São João da Pesqueira","d":"Distrito de Viseu","v":[224,308,392,475,531,587,50]},{"n":"São Pedro do Sul","d":"Distrito de Viseu","v":[268,343,446,549,601,704,50]},{"n":"São Roque do Pico","d":"Região Autónoma dos Açores","v":[280,392,504,587,671,755,50]},{"n":"São Vicente","d":"Região Autónoma da Madeira","v":[539,690,898,1106,1210,1418,75]},{"n":"Sardoal","d":"Distrito de Santarém","v":[296,380,494,608,666,780,50]},{"n":"Sátão","d":"Distrito de Viseu","v":[224,308,392,475,531,587,50]},{"n":"Seia","d":"Distrito de Guarda","v":[224,308,392,475,531,587,50]},{"n":"Seixal","d":"Distrito de Setúbal","v":[513,671,866,1052,1151,1349,100]},{"n":"Sernancelhe","d":"Distrito de Viseu","v":[224,308,392,475,531,587,50]},{"n":"Serpa","d":"Distrito de Beja","v":[280,392,504,587,671,755,50]},{"n":"Sertã","d":"Distrito de Castelo Branco","v":[224,308,392,475,531,587,50]},{"n":"Sesimbra","d":"Distrito de Setúbal","v":[456,583,759,935,1023,1199,75]},{"n":"Setúbal","d":"Distrito de Setúbal","v":[507,649,844,1040,1138,1333,75]},{"n":"Sever do Vouga","d":"Distrito de Aveiro","v":[224,308,392,475,531,587,50]},{"n":"Silves","d":"Distrito de Faro","v":[444,568,739,911,996,1168,75]},{"n":"Sines","d":"Distrito de Setúbal","v":[668,856,1113,1371,1500,1758,100]},{"n":"Sintra","d":"Distrito de Lisboa","v":[514,671,866,1056,1155,1354,100]},{"n":"Sobral de Monte Agraço","d":"Distrito de Lisboa","v":[336,430,559,689,754,883,50]},{"n":"Soure","d":"Distrito de Coimbra","v":[254,326,424,522,571,670,50]},{"n":"Sousel","d":"Distrito de Portalegre","v":[224,308,392,475,531,587,50]},{"n":"Tábua","d":"Distrito de Coimbra","v":[224,308,392,475,531,587,50]},{"n":"Tabuaço","d":"Distrito de Viseu","v":[224,308,392,475,531,587,50]},{"n":"Tarouca","d":"Distrito de Viseu","v":[224,308,392,475,531,587,50]},{"n":"Tavira","d":"Distrito de Faro","v":[521,671,868,1069,1169,1370,100]},{"n":"Terras de Bouro","d":"Distrito de Braga","v":[364,466,606,747,817,958,50]},{"n":"Tomar","d":"Distrito de Santarém","v":[326,418,543,669,732,858,50]},{"n":"Tondela","d":"Distrito de Viseu","v":[258,331,430,530,580,679,50]},{"n":"Torre de Moncorvo","d":"Distrito de Bragança","v":[224,308,392,475,531,587,50]},{"n":"Torres Novas","d":"Distrito de Santarém","v":[303,388,505,622,681,798,50]},{"n":"Torres Vedras","d":"Distrito de Lisboa","v":[393,531,671,806,895,1033,75]},{"n":"Trancoso","d":"Distrito de Guarda","v":[224,308,392,475,531,587,50]},{"n":"Trofa","d":"Distrito de Porto","v":[337,432,562,693,758,888,50]},{"n":"Vagos","d":"Distrito de Aveiro","v":[280,358,466,574,628,736,50]},{"n":"Vale de Cambra","d":"Distrito de Aveiro","v":[261,334,435,535,586,686,50]},{"n":"Valença","d":"Distrito de Viana do Castelo","v":[250,321,417,514,562,659,50]},{"n":"Valongo","d":"Distrito de Porto","v":[376,531,671,784,895,989,75]},{"n":"Valpaços","d":"Distrito de Vila Real","v":[224,308,392,475,531,587,50]},{"n":"Velas","d":"Região Autónoma dos Açores","v":[280,392,504,587,671,755,50]},{"n":"Vendas Novas","d":"Distrito de Évora","v":[315,403,524,646,707,828,50]},{"n":"Viana do Alentejo","d":"Distrito de Évora","v":[280,392,504,587,671,755,50]},{"n":"Viana do Castelo","d":"Distrito de Viana do Castelo","v":[350,448,583,718,785,920,50]},{"n":"Vidigueira","d":"Distrito de Beja","v":[260,333,434,534,585,685,50]},{"n":"Vieira do Minho","d":"Distrito de Braga","v":[266,340,443,546,597,700,50]},{"n":"Vila da Praia da Vitória","d":"Região Autónoma dos Açores","v":[304,392,506,623,682,799,50]},{"n":"Vila de Rei","d":"Distrito de Castelo Branco","v":[224,308,392,475,531,587,50]},{"n":"Vila do Bispo","d":"Distrito de Faro","v":[421,539,701,864,945,1108,75]},{"n":"Vila do Conde","d":"Distrito de Porto","v":[385,493,641,790,864,1013,50]},{"n":"Vila do Porto","d":"Região Autónoma dos Açores","v":[280,392,504,587,671,755,50]},{"n":"Vila Flor","d":"Distrito de Bragança","v":[224,308,392,475,531,587,50]},{"n":"Vila Franca de Xira","d":"Distrito de Lisboa","v":[491,629,819,1008,1103,1292,75]},{"n":"Vila Franca do Campo","d":"Região Autónoma dos Açores","v":[280,392,504,587,671,755,50]},{"n":"Vila Nova da Barquinha","d":"Distrito de Santarém","v":[247,316,411,506,554,649,50]},{"n":"Vila Nova de Cerveira","d":"Distrito de Viana do Castelo","v":[224,308,392,475,531,590,50]},{"n":"Vila Nova de Famalicão","d":"Distrito de Braga","v":[311,398,518,638,698,818,50]},{"n":"Vila Nova de Foz Côa","d":"Distrito de Guarda","v":[224,308,392,475,531,587,50]},{"n":"Vila Nova de Gaia","d":"Distrito de Porto","v":[491,629,819,1008,1103,1292,75]},{"n":"Vila Nova de Paiva","d":"Distrito de Viseu","v":[224,308,392,475,531,587,50]},{"n":"Vila Nova de Poiares","d":"Distrito de Coimbra","v":[224,308,392,475,531,587,50]},{"n":"Vila Pouca de Aguiar","d":"Distrito de Vila Real","v":[224,308,392,475,531,587,50]},{"n":"Vila Real","d":"Distrito de Vila Real","v":[280,392,504,587,671,755,50]},{"n":"Vila Real de Santo António","d":"Distrito de Faro","v":[448,671,866,1034,1146,1257,100]},{"n":"Vila Velha de Ródão","d":"Distrito de Castelo Branco","v":[224,308,392,475,531,587,50]},{"n":"Vila Verde","d":"Distrito de Braga","v":[271,347,452,557,609,714,50]},{"n":"Vila Viçosa","d":"Distrito de Évora","v":[224,308,392,475,531,587,50]},{"n":"Vimioso","d":"Distrito de Bragança","v":[224,308,392,475,531,587,50]},{"n":"Vinhais","d":"Distrito de Bragança","v":[224,308,392,475,531,587,50]},{"n":"Viseu","d":"Distrito de Viseu","v":[306,392,511,629,688,806,50]},{"n":"Vizela","d":"Distrito de Braga","v":[266,340,443,546,597,700,50]},{"n":"Vouzela","d":"Distrito de Viseu","v":[259,332,432,533,583,683,50]}];
+const T=['T0','T1','T2','T3','T4','T5','T6','T7'];
+const by={};D.forEach(d=>by[d.n.toLocaleLowerCase('pt')]=d);
+const eur=(n,dec)=>n.toLocaleString('pt-PT',{minimumFractionDigits:dec?2:0,maximumFractionDigits:dec?2:0})+' €';
+const $=id=>document.getElementById(id);
+const dl=$('names');D.forEach(d=>{const o=document.createElement('option');o.value=d.n;dl.appendChild(o)});
+let ti=2;
+T.forEach((t,i)=>{const b=document.createElement('button');b.type='button';b.textContent=t;b.addEventListener('click',()=>{ti=i;run()});$('tip').appendChild(b)});
+
+function findConc(){const v=$('conc').value.trim().toLocaleLowerCase('pt');return by[v]||(v.length>2?D.find(d=>d.n.toLocaleLowerCase('pt').startsWith(v)):null)}
+function limitFor(d){const base=ti<=5?d.v[ti]:d.v[5]+(ti-5)*d.v[6];const f=1+($('park').checked?.1:0)+($('cert').checked?.1:0);return Math.round(base*f*100)/100}
+function durRate(y){return y>=20?5:y>=10?10:y>=5?15:25}
+function num(id){const v=parseFloat($(id).value);return isFinite(v)&&v>0?v:0}
+
+function taxFor(renda,lim,dur,meses,desp){
+  const bruto=renda*meses, liq=Math.max(0,bruto-desp);
+  const rsaa=renda<=lim && dur>=3;
+  if(rsaa) return {regime:'rsaa',rate:0,bruto,liq,irs:0};
+  const dr=durRate(dur);
+  let rate=dr, regime='geral';
+  if(renda<=2300 && 10<=dr){rate=10;regime='moderada'} else if(renda<=2300){regime='moderada-dur'}
+  return {regime,rate,bruto,liq,irs:Math.round(liq*rate)/100};
+}
+
+function run(){
+  [...$('tip').children].forEach((b,i)=>b.setAttribute('aria-pressed',i===ti));
+  const d=findConc();
+  if(!d){$('conc-help').textContent='Escolha um concelho da lista.';$('lim').textContent='—';return}
+  $('conc-help').textContent=d.d+' · acima de T5 soma '+d.v[6]+' € por quarto adicional';
+  const lim=limitFor(d);$('lim').textContent=eur(lim,lim%1!==0);
+  const renda=num('renda'), meses=Math.min(12,Math.max(1,Math.round(num('meses'))||12)), dur=+$('dur').value, desp=num('desp');
+  const r=taxFor(renda,lim,dur,meses,desp);
+
+  const pill=$('pill');
+  if(r.regime==='rsaa'){pill.className='pill ok';pill.textContent='Isento · arrendamento acessível'}
+  else if(r.regime.startsWith('moderada')){pill.className='pill warn';pill.textContent='Taxa '+r.rate+'% · renda moderada'}
+  else {pill.className='pill bad';pill.textContent='Taxa '+r.rate+'% · regime geral'}
+  $('irs').innerHTML=eur(r.irs,r.irs%1!==0)+'<small>de IRS por ano</small>';
+  $('dock-v').textContent=eur(r.irs,r.irs%1!==0)+' /ano';
+  $('dock-l').textContent='IRS · '+pill.textContent;
+
+  let why='';
+  const fora=renda>lim;
+  if(r.regime==='rsaa') why=`A renda de ${eur(renda)} está dentro do limite de ${eur(lim,lim%1!==0)} para um ${T[ti]} em ${d.n}. Cumprindo as regras do regime, o rendimento fica isento.`;
+  else if(!fora && dur<3) why=`A renda cabe no limite, mas a isenção exige contratos de pelo menos 3 anos em habitação permanente. Com este prazo aplica-se a taxa de ${r.rate}%.`;
+  else if(r.regime.startsWith('moderada')) why=`A renda passa ${eur(renda-lim,(renda-lim)%1!==0)} do limite acessível, por isso não há isenção. Como não excede 2.300 €/mês, aplica-se a taxa de renda moderada${r.regime==='moderada-dur'?', mas a redução pela duração do contrato dá uma taxa ainda mais baixa':''}: ${r.rate}%.`;
+  else why=`A renda está acima do limite acessível e acima dos 2.300 € da renda moderada. Aplica-se a taxa autónoma de ${r.rate}%${dur>=5?', já com a redução pela duração do contrato':''}.`;
+  $('why').textContent=why;
+
+  $('calc').innerHTML=
+    `<tr><td>Rendas recebidas (${meses} ${meses===1?'mês':'meses'})</td><td>${eur(r.bruto)}</td></tr>`+
+    `<tr><td>Despesas dedutíveis</td><td>− ${eur(Math.min(desp,r.bruto))}</td></tr>`+
+    `<tr><td>Rendimento tributável</td><td>${eur(r.liq)}</td></tr>`+
+    `<tr><td>Taxa</td><td>${r.rate}%</td></tr>`+
+    `<tr class="tot"><td>Rendimento líquido após IRS</td><td>${eur(r.bruto-r.irs,(r.bruto-r.irs)%1!==0)}</td></tr>`;
+
+  // comparação com a renda no limite
+  const bars=$('bars'), v=$('verdict');
+  if(dur<3){bars.innerHTML='';v.innerHTML='Com contratos de menos de 3 anos a isenção não se aplica. Para a obter, o contrato de habitação permanente tem de ter pelo menos 3 anos.';return}
+  const atLim=taxFor(lim,lim,dur,meses,desp);
+  const netNow=r.bruto-r.irs, netLim=atLim.bruto-atLim.irs;
+  if(renda<=lim){bars.innerHTML='';v.innerHTML=`A renda já está no regime acessível. Ainda pode subir até <b>${eur(lim,lim%1!==0)}</b> por mês sem perder a isenção.`;return}
+  const mx=Math.max(netNow,netLim)||1;
+  const row=(lab,val,best)=>`<div class="bar${best?' best':''}"><span>${lab}</span><span>${eur(val,val%1!==0)}</span><div class="t"><i style="width:${(val/mx*100).toFixed(1)}%"></i></div></div>`;
+  bars.innerHTML=row(`Renda atual, ${eur(renda)} · líquido anual`,netNow,netNow>=netLim)+row(`Renda no limite, ${eur(lim,lim%1!==0)} · isenta`,netLim,netLim>netNow);
+  const diff=netLim-netNow;
+  if(diff>0) v.innerHTML=`Baixar a renda para o limite deixava-lhe <b>mais ${eur(diff,diff%1!==0)} por ano</b>, porque deixava de pagar IRS.`;
+  else { // renda de equilíbrio: renda*meses - irs = lim*meses
+    const be=(lim*meses - desp*r.rate/100)/(meses*(1-r.rate/100));
+    v.innerHTML=`Mantendo a renda atual fica com <b>mais ${eur(-diff,diff%1!==0)} por ano</b> do que no regime acessível. O ponto de equilíbrio, à taxa de ${r.rate}%, é uma renda de cerca de ${eur(Math.ceil(be))} por mês.`;
+  }
+}
+['conc','park','cert','renda','meses','dur','desp'].forEach(id=>{$(id).addEventListener('input',run);$(id).addEventListener('change',run)});
+$('form').addEventListener('submit',e=>e.preventDefault());
+$('dock-b').addEventListener('click',()=>{const rm=matchMedia('(prefers-reduced-motion: reduce)').matches;$('res').scrollIntoView({behavior:rm?'auto':'smooth',block:'start'})});
+if('IntersectionObserver' in window){
+  new IntersectionObserver(es=>es.forEach(e=>$('dock').classList.toggle('off',e.isIntersecting)),{threshold:0.15}).observe($('irs'));
+}
+run();
+</script>
+
+</body></html>
